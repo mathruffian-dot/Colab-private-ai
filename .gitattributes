@@ -1,0 +1,2 @@
+# 腳本要在 Colab（Linux）執行，一律用 LF 換行
+* text=auto eol=lf

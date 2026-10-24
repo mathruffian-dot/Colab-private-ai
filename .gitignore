@@ -1,0 +1,16 @@
+# 學生資料一律不進版控（samples/ 只放虛構假資料）
+工作區/
+輸出/
+*.docx
+*.doc
+*.xlsx
+*.pdf
+*.zip
+
+# 模型與日誌
+*.gguf
+models/
+logs/
+
+__pycache__/
+.env
