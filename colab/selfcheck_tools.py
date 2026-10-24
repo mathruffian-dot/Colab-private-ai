@@ -6,7 +6,7 @@
 - OCR：把一行中文畫成乾淨的圖片，用繁中 OCR 單行模式讀回來。
 - 產生含表格與原生圖表的 Word／Excel／PowerPoint → 轉成 PDF → 從 PDF 讀回中文；
   另檢查 xlsxwriter、Markdown 表格、plotly 離線 HTML、合併列印、PDF／壓縮檔／Office 加密、
-  掃描 PDF 轉文字、公文字型對應、簡轉繁與斷詞、pandoc。
+  掃描 PDF 轉文字、公文字型對應、簡轉繁與斷詞、影音、QR code／注音／文字雲、語音合成與辨識、pandoc。
 任何一項失敗只顯示警告，不會擋住 AI 啟動。
 """
 import json
@@ -341,6 +341,68 @@ def _():
     return f"软件信息→{converted}；斷詞 {len(words)} 個"
 
 
+@check("影音與壓縮檔（FFmpeg、ImageMagick、7z、unar）")
+def _():
+    subprocess.run(["ffmpeg", "-loglevel", "error", "-f", "lavfi", "-i", "sine=frequency=440:duration=1",
+                    "tone.mp3"], check=True, capture_output=True, timeout=60)
+    secs = float(subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0",
+                                 "tone.mp3"], capture_output=True, text=True, check=True).stdout)
+    if not 0.5 < secs < 1.5:
+        raise RuntimeError(f"FFmpeg 產生的音檔長度不對：{secs}")
+    from PIL import Image
+    Image.new("RGB", (400, 300), "white").save("big.png")
+    subprocess.run(["convert", "big.png", "-resize", "50%", "small.png"], check=True, capture_output=True)
+    if Image.open("small.png").size != (200, 150):
+        raise RuntimeError("ImageMagick 縮圖結果不對")
+    subprocess.run(["7z", "a", "-bd", "pack.7z", "small.png"], check=True, capture_output=True)
+    if not shutil.which("unar"):
+        raise RuntimeError("找不到 unar")
+    return f"音檔 {secs:.1f} 秒、縮圖、7z 壓縮都正常"
+
+
+@check("QR code、注音、文字雲（qrcode、pypinyin、wordcloud）")
+def _():
+    import qrcode
+    from matplotlib import font_manager
+    from pypinyin import Style, pinyin
+    from wordcloud import WordCloud
+    qrcode.make("https://example.com/form").save("qr.png")
+    zhuyin = " ".join(p[0] for p in pinyin("成績", style=Style.BOPOMOFO))
+    if "ㄔㄥˊ" not in zhuyin:
+        raise RuntimeError(f"注音結果：{zhuyin}")
+    font = font_manager.findfont(font_manager.FontProperties(family=["sans-serif"]))
+    WordCloud(font_path=font, width=300, height=200).generate("閱讀 閱讀 寫作 數學 合作").to_file("cloud.png")
+    return f"成績→{zhuyin}"
+
+
+@check("文字轉語音（edge-tts，線上服務）")
+def _():
+    import asyncio
+    import edge_tts
+    asyncio.run(edge_tts.Communicate(TEXT, "zh-TW-HsiaoChenNeural").save("tts.mp3"))  # 測試用文字，不含個資
+    if os.path.getsize("tts.mp3") < 1000:
+        raise RuntimeError("產生的語音檔太小")
+    return "台灣口音語音產生成功（只用於不含個資的文字）"
+
+
+@check("語音轉文字（faster-whisper，離線）")
+def _():
+    from faster_whisper import WhisperModel
+    from opencc import OpenCC
+    if not os.path.exists("tts.mp3"):
+        raise RuntimeError("缺少測試音檔（上面的 edge-tts 項目沒有成功）；模型本身可能正常")
+    try:
+        model, device = WhisperModel("large-v3-turbo", device="cuda", compute_type="float16"), "GPU"
+    except Exception:  # GPU 記憶體不足時退回 CPU
+        model, device = WhisperModel("large-v3-turbo", device="cpu", compute_type="int8"), "CPU"
+    segments, _info = model.transcribe("tts.mp3", language="zh")
+    text = compact(OpenCC("s2twp").convert("".join(s.text for s in segments)))
+    hit = sum(ch in text for ch in TEXT)
+    if hit < len(TEXT) - 2:
+        raise RuntimeError(f"只聽對 {hit}/{len(TEXT)} 字：{text[:30]}")
+    return f"{device} 執行，聽對 {hit}/{len(TEXT)} 字"
+
+
 @check("Markdown 轉 Word（pandoc）")
 def _():
     with open("note.md", "w", encoding="utf-8") as f:
@@ -362,4 +424,4 @@ for ok, name, detail in results:
 if failed:
     print(f"⚠️ {len(failed)} 項沒通過，AI 仍可使用，但相關功能可能要請老師換別的方式處理。")
     sys.exit(1)
-print("✅ 全部通過：Word、Excel、PowerPoint、PDF、OCR、表格與圖表、合併列印、加密、公文字型都能用。")
+print("✅ 全部通過：Word、Excel、PowerPoint、PDF、OCR、表格與圖表、合併列印、加密、公文字型、影音與語音都能用。")

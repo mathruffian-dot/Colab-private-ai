@@ -18,7 +18,7 @@ description: 一次做完「教師私人 AI」（Colab 上的 Strata＋Qwen3.8�
 ## 固定設定
 
 - 筆記本（正式版，GitHub）：`https://colab.research.google.com/github/mathruffian-dot/Colab-private-ai/blob/main/啟動私人AI.ipynb`
-  - 特性：預設 G4；Strata 上下文 256K；OpenCode 固定 1.19.4、用到 80% 自動壓縮；入口直接開進「工作區」新對話；背景預裝文件工具（OCR 繁中、PDF、Word／Excel／PowerPoint、表格與圖表：Excel／PPT 原生圖表、matplotlib／seaborn／plotly、graphviz 流程圖、合併列印、PDF／Office 加密、掃描 PDF 轉文字、標楷體／新細明體對應、簡轉繁，中文字型已設定），第 ④ 格開機自我檢查（16 項）；思考強度 off／low／medium／high；「👀 檢視工作區檔案」格；不儲存輸出；「全部執行」停在 ⏹ 格。
+  - 特性：預設 G4；Strata 上下文 256K；OpenCode 固定 1.19.4、用到 80% 自動壓縮；入口直接開進「工作區」新對話；背景預裝文件工具（OCR 繁中、PDF、Word／Excel／PowerPoint、表格與圖表：Excel／PPT 原生圖表、matplotlib／seaborn／plotly、graphviz 流程圖、合併列印、PDF／Office 加密、掃描 PDF 轉文字、標楷體／新細明體對應、簡轉繁、FFmpeg／ImageMagick、語音轉文字（faster-whisper 離線）、文字轉語音（edge-tts 線上，限非個資）、QR code／注音／文字雲、7z／unar，中文字型已設定），第 ④ 格開機自我檢查（20 項）；思考強度 off／low／medium／high；「👀 檢視工作區檔案」格；不儲存輸出；「全部執行」停在 ⏹ 格。
   - 從 GitHub 開啟會出現「這個筆記本不是由 Google 編寫的」，按「仍要執行」。
 - 筆記本由 `tools/build_notebook.py` 從 `colab/` 產生；修改後重產並 push 到 GitHub（網址不變）。
 - 費用：G4 約 8.7 運算單元／小時。**只有「中斷連線並刪除執行階段」才會停止扣單元**，關分頁不會。

@@ -17,6 +17,8 @@ APT_PACKAGES=(
   fonts-noto-cjk                                                              # 中文字型，轉 PDF 不會變方塊
   graphviz                                                                    # 流程圖、組織圖
   ghostscript unpaper pngquant                                                # ocrmypdf 需要的工具（ocrmypdf 本身用 pip 裝）
+  ffmpeg imagemagick                                                          # 影音轉檔剪輯、圖片批次處理
+  p7zip-full unar                                                             # 壓縮檔（zip、7z、rar）
   fonts-arphic-ukai fonts-arphic-uming                                        # 楷書、明體：代替公文常用的標楷體、新細明體
 )
 PIP_PACKAGES=(
@@ -26,7 +28,10 @@ PIP_PACKAGES=(
   pypdf pyzipper msoffcrypto-tool xlrd                                        # PDF 合併／加密、AES 加密壓縮、有密碼的 Office 檔、舊版 .xls
   opencc-python-reimplemented jieba                                           # 簡轉繁（台灣用語）、中文斷詞
   ocrmypdf                                                                    # 掃描 PDF 轉可搜尋文字（apt 版是給系統 Python 3.10 的，Colab 的 python3 較新會無法執行）
+  faster-whisper pydub edge-tts                                               # 語音轉文字（離線）、音訊剪輯、文字轉語音（線上，限非個資）
+  qrcode[pil] pypinyin wordcloud                                              # QR code、注音、文字雲
 )
+WHISPER_MODEL=large-v3-turbo  # 語音轉文字模型（約 1.6 GB），安裝時先下載，之後離線使用
 # pandas、numpy、matplotlib、Pillow、OpenCV 是 Colab 內建，不重裝（由 selfcheck_tools.py 確認）
 
 # 學校文件常指定標楷體、新細明體、微軟正黑體（Windows 字型，Linux 沒有），轉 PDF 時改用最接近的字型
@@ -72,6 +77,11 @@ axes.unicode_minus: False
 EOF
 }
 
+# 先把語音轉文字模型下載好：老師用時不必等，晤談錄音等含個資的音檔也不必連網
+preload_whisper() {
+  python3 -c "from faster_whisper.utils import download_model; download_model('$WHISPER_MODEL')" >/dev/null
+}
+
 install_all() {
   rm -f "$DONE"
   export DEBIAN_FRONTEND=noninteractive
@@ -80,16 +90,17 @@ install_all() {
   pip install -q "${PIP_PACKAGES[@]}"
   configure_fontconfig
   configure_matplotlib
+  preload_whisper
   tesseract --list-langs 2>/dev/null | grep -q chi_tra && touch "$DONE"
 }
 
 case "${1:-}" in
   --background)
     nohup bash "$0" > "$LOG_DIR/tools.log" 2>&1 &
-    echo "▶ 文件工具整合包在背景安裝中（OCR 繁中、PDF、Word／Excel／PPT、表格與圖表、合併列印、加密、公文字型）…"
+    echo "▶ 文件工具整合包在背景安裝中（OCR 繁中、PDF、Word／Excel／PPT、表格與圖表、合併列印、加密、公文字型、影音與語音）…"
     ;;
   --wait)
-    for _ in $(seq 1 120); do
+    for _ in $(seq 1 180); do
       if [ -f "$DONE" ]; then
         echo "✅ 文件工具整合包已安裝，開始自我檢查（約 30 秒）…"
         python3 "$(dirname "$0")/selfcheck_tools.py" 2>&1 | tee "$LOG_DIR/selfcheck.log"
