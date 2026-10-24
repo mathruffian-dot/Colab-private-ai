@@ -190,7 +190,8 @@ def main():
         },
         "cells": CELLS,
     }
-    NOTEBOOK.write_text(json.dumps(notebook, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+    # 固定 LF 換行：在 Windows 產生也不會變成 CRLF
+    NOTEBOOK.write_text(json.dumps(notebook, ensure_ascii=False, indent=1) + "\n", encoding="utf-8", newline="\n")
     print(f"已產生 {NOTEBOOK.name}（{len(CELLS)} 格）")
 
 
